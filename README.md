@@ -421,8 +421,7 @@ git checkout -b team/robert team-fork/team/robert  # branch تیمی رو local 
 
 3. **توی README یه ردیف به جدول اضافه کنید:**
    ```markdown
-   | robert | `team/robert` | 610334567، 610334568، 610334569 | teams/robert.md |
-   ```
+| Group-ALpha | `Group-ALpha` | 610303224, 610303219, 610303140 | teams/Group-ALpha.md |   ```
 
 4. **Commit و PR بدید:**
    ```bash
@@ -998,7 +997,7 @@ git pull team-fork team/robert  # یا git pull origin team/robert اگر سرگ
 
 | نام تیم | برنچ تیمی | اعضا (شماره دانشجویی) | لینک فایل تیم |
 |---------|-----------|------------------------|---------------|
-| مثال | `team/example` | 610334567، 610334568 | teams/example.md |
+| Group-ALpha | `Group-ALpha` | 610303224, 610303219, 610303140 | teams/Group-ALpha.md |
 <!-- ردیف تیم خودتون رو اینجا اضافه کنید -->
 
 ---
