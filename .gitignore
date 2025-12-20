@@ -1,3 +1,16 @@
 # Ignore specs documentation drafts
 docs/specs/
 
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+*.log
+
+# C++ / IDE
+.vscode/
+.idea/
+*.exe
+*.o
+*.obj
