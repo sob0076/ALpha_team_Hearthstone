@@ -19,7 +19,7 @@ def main():
     
     test_image_path = os.path.join(
         project_root, 
-        "bgknowhow-main", "images", "minions", "BG20_100_render_80.webp"
+        "assets", "images", "minions", "BG20_100_render_80.webp"
     )
 
     try:
