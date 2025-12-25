@@ -2,109 +2,67 @@ import pygame
 from src.core.interfaces import Component
 from src.engine.card import Minion
 
-# تنظیمات رنگ (RGB)
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 80, 80)
-GREEN = (80, 255, 80)
-YELLOW = (255, 215, 0)
-HOVER_COLOR = (255, 255, 255) # رنگ کادر دور کارت موقع هاور
+# --- کانفیگ و تنظیمات ظاهری کارت ---
+CARD_WIDTH, CARD_HEIGHT = 120, 180
+FONT_SIZE = 24
+FONT_COLOR = (255, 255, 255)
+HEALTH_COLOR_NORMAL = (255, 255, 255) # رنگ عادی جان
+HEALTH_COLOR_DAMAGED = (255, 80, 80) # رنگ قرمز برای جان آسیب‌دیده
+BACKGROUND_COLOR = (40, 40, 60) # رنگ پس‌زمینه کارت اگر تصویر نبود
+DEAD_OVERLAY_COLOR = (50, 50, 50, 180) # رنگ نیمه‌شفاف خاکستری برای حالت مرگ
 
 class CardView(Component):
-    def __init__(self, card_model, x, y, scale=0.7):
-        self.model = card_model
-        self.rect = pygame.Rect(x, y, 0, 0)
-        self.scale = scale
-        self.is_hovered = False  # وضعیت موس
+    """
+    وظیفه این کلاس، نمایش گرافیکی یک کارت Minion است.
+    این کلاس هیچ منطقی از بازی را تغییر نمی‌دهد و فقط اطلاعات
+    دریافتی از engine.card.Minion را به تصویر می‌کشد.
+    """
+    def __init__(self, minion: Minion, position=(0, 0)):
+        """
+        یک نمونه Minion و موقعیت اولیه کارت را دریافت می‌کند.
+        """
+        self.minion = minion
+        self.position = position
         
-        # 1. لود کردن تصویر
+        # ساخت یک سطح (Surface) برای کارت که تمام اجزا روی آن کشیده می‌شوند
+        self.surface = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
+        
+        # بارگذاری و تنظیم فونت برای نمایش Attack و Health
         try:
-            original = pygame.image.load(self.model.image_path).convert_alpha()
-            width = int(original.get_width() * scale)
-            height = int(original.get_height() * scale)
-            self.image = pygame.transform.smoothscale(original, (width, height))
-            self.rect.width = width
-            self.rect.height = height
-        except Exception as e:
-            print(f"Texture Error: {e}")
-            self.image = pygame.Surface((int(200*scale), int(300*scale)))
-            self.image.fill((50, 50, 50))
-            self.rect.width = self.image.get_width()
-            self.rect.height = self.image.get_height()
+            self.font = pygame.font.Font(None, FONT_SIZE) # استفاده از فونت پیش‌فرض پایگیم
+        except Exception:
+            self.font = pygame.font.SysFont('Arial', FONT_SIZE)
 
-        # 2. ساخت لایه مرگ (Dead Overlay)
-        # یک صفحه هم‌اندازه کارت که سیاه و نیمه‌شفاف است
-        self.dead_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
-        self.dead_surface.fill((20, 20, 20, 200)) # رنگ سیاه با شفافیت 200 (از 255)
+        # بارگذاری تصویر کارت (اگر وجود داشته باشد)
+        self.card_image = None
+        try:
+            # تصویر را بارگذاری و به اندازه کارت تغییر سایز می‌دهد
+            self.card_image = pygame.image.load(self.minion.image_path).convert_alpha()
+            self.card_image = pygame.transform.scale(self.card_image, (CARD_WIDTH, CARD_HEIGHT))
+        except (pygame.error, FileNotFoundError) as e:
+            print(f"Warning: Could not load image for {self.minion.name} from '{self.minion.image_path}'. Error: {e}")
 
-        # 3. فونت
-        self.font = pygame.font.SysFont("Arial", int(38 * scale), bold=True)
+        # سطح نیمه‌شفاف برای حالت مرگ
+        self.dead_overlay = pygame.Surface((CARD_WIDTH, CARD_HEIGHT), pygame.SRCALPHA)
+        self.dead_overlay.fill(DEAD_OVERLAY_COLOR)
 
     def handle_event(self, event):
-        """مدیریت رویدادهای مربوط به کارت (مثل هاور شدن موس)"""
-        if event.type == pygame.MOUSEMOTION:
-            # اگر موس روی مستطیل کارت بود، هاور فعال شود
-            if self.rect.collidepoint(event.pos):
-                self.is_hovered = True
-            else:
-                self.is_hovered = False
-
-    def update(self, dt):
-        """آپدیت وضعیت (فعلاً انیمیشن نداریم)"""
+        """ در این فاز، کارت‌ها به هیچ رویدادی (مثل کلیک) واکنش نشان نمی‌دهند. """
         pass
 
-    def render(self, surface):
-        """رسم نهایی کارت"""
-        
-        # 1. رسم خود کارت
-        surface.blit(self.image, self.rect)
+    def update(self, dt):
+        """ در این فاز، کارت‌ها انیمیشن یا آپدیت زمانی ندارند. """
+        pass
 
-        # 2. رسم اعداد (اگر زنده است یا حتی اگر مرده، اعداد را زیر سایه نشان بده)
-        if isinstance(self.model, Minion):
-            self._draw_stats(surface)
-
-        # 3. اعمال افکت مرگ (اگر مرده است)
-        if isinstance(self.model, Minion) and not self.model.is_alive:
-            # کشیدن لایه تیره روی کل کارت
-            surface.blit(self.dead_surface, self.rect)
-            
-            # (اختیاری) نوشتن متن Dead روی کارت برای وضوح بیشتر
-            # dead_text = self.font.render("DEAD", True, RED)
-            # text_rect = dead_text.get_rect(center=self.rect.center)
-            # surface.blit(dead_text, text_rect)
-
-        # 4. افکت هاور (اگر زنده است و موس رویش است)
-        # معمولاً کارت مرده تعامل ندارد، پس شرط is_alive را هم اضافه می‌کنیم
-        if self.is_hovered and self.model.is_alive:
-            # کشیدن یک کادر سفید دور کارت با ضخامت 3
-            pygame.draw.rect(surface, HOVER_COLOR, self.rect, 4, border_radius=5)
-
-    def _draw_stats(self, surface):
-        offset_x = 35 * self.scale
-        offset_y = 45 * self.scale 
-
-        attack_pos = (self.rect.left + offset_x, self.rect.bottom - offset_y)
-        health_pos = (self.rect.right - offset_x, self.rect.bottom - offset_y)
-        
-        # تعیین رنگ هوشمند جان
-        health_display = max(0, self.model.health)
-        health_color = WHITE
-        
-        if health_display < self.model.max_health:
-            health_color = RED
-        elif health_display > self.model.max_health:
-            health_color = GREEN
-
-        self._render_bubble(surface, str(self.model.attack), attack_pos, YELLOW)
-        self._render_bubble(surface, str(health_display), health_pos, health_color)
-
-    def _render_bubble(self, surface, text, center, text_color):
-        radius = int(28 * self.scale)
-        # دایره سیاه توپر
-        pygame.draw.circle(surface, BLACK, center, radius)
-        # قاب سفید دور دایره
-        pygame.draw.circle(surface, WHITE, center, radius, 2)
-        # متن
-        text_surf = self.font.render(text, True, text_color)
-        text_rect = text_surf.get_rect(center=center)
-        surface.blit(text_surf, text_rect)
+    def render(self, parent_surface: pygame.Surface):
+        """
+        کارت را بر روی سطح والد (مثلاً صفحه بازی) رسم می‌کند.
+        این متد وضعیت Minion را بررسی کرده و ظاهر کارت را بر اساس آن تنظیم می‌کند.
+        """
+        # 1. رسم پس‌زمینه یا تصویر کارت
+        if self.card_image:
+            self.surface.blit(self.card_image, (0, 0))
+        else:
+            # اگر تصویری وجود نداشت، یک پس‌زمینه رنگی ساده رسم کن
+            self.surface.fill(BACKGROUND_COLOR)
+            pygame.draw.rect(self.surface, (100, 100, 120), self.surface.get_rect(), 3) # حاشیه
