@@ -2,39 +2,39 @@ import pygame
 import sys
 import os
 
-# ---------------------------------------------------------
-# تنظیم مسیرهای پایتون برای شناختن پوشه src و ریشه پروژه
-# ---------------------------------------------------------
+# تنظیم مسیرها
 current_script_path = os.path.abspath(__file__)
 src_directory = os.path.dirname(current_script_path)
 project_root = os.path.dirname(src_directory)
 sys.path.append(project_root)
-# ---------------------------------------------------------
 
-# ایمپورت‌های جدید بر اساس ساختار Refactor شده
+from src.core.event_bus import EventBus
+import src.core.event_names as Events
 from src.engine.card import Minion
-from src.ui.components.card_view import CardView  # <--- مسیر جدید
-from src.core.event_bus import EventBus           # <--- اضافه شدن هسته معماری
+from src.ui.components.card_view import CardView
+from src.engine.game_engine import GameEngine  # <--- ایمپورت کلاس جدید
 
-# تنظیمات صفحه
+# تنظیمات
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 FPS = 60
-BG_COLOR = (30, 30, 30)
+BG_COLOR = (40, 40, 40)
 
 def main():
-    # 1. راه‌اندازی اولیه
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Hearthstone Battlegrounds - Alpha Architecture")
+    pygame.display.set_caption("Hearthstone - Modular Architecture")
     clock = pygame.time.Clock()
 
-    # 2. راه‌اندازی معماری (Event Bus)
-    # این شیء بعداً وظیفه جابجایی پیام‌ها بین سرور و UI را دارد
+    # 1. زیرساخت (EventBus)
     event_bus = EventBus()
 
-    # 3. ساخت مدل (Logic)
-    razorfen_minion = Minion(
+    # 2. هسته مرکزی (Game Engine)
+    game_engine = GameEngine()
+
+    # 3. ساخت داده‌ها (Model)
+    razorfen = Minion(
+        id="razorfen_1",  
         name="Razorfen Geomancer",
         image_path="assets/images/minions/BG20_100_render_80.webp",
         attack=3,
@@ -43,39 +43,47 @@ def main():
         minion_type="Quilboar"
     )
 
-    # 4. ساخت کامپوننت (UI)
-    # y=100 قرار دادیم تا کارت در جای مناسبی باشد
-    card_view = CardView(razorfen_minion, x=SCREEN_WIDTH//2 - 100, y=100, scale=0.8)
+    # **مهم:** معرفی مینیون به موتور بازی (Registration)
+    # اگر این کار را نکنیم، انجین نمی‌تواند پیدایش کند
+    game_engine.register_minion(razorfen)
 
-    print("--- Game Started ---")
-    print("Architecture loaded: EventBus ready, UI Component ready.")
+    # 4. رابط کاربری (UI)
+    card_view = CardView(razorfen, x=(SCREEN_WIDTH // 2) - 140, y=100, scale=0.7)
 
-    # 5. حلقه اصلی بازی
+    print("--- Game Started: Fully Modular ---")
+    
     running = True
     while running:
-        # الف) مدیریت زمان (Delta Time)
         dt = clock.tick(FPS)
 
-        # ب) پردازش ورودی‌ها (Event Handling)
+        # --- UI Loop ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             
-            # ارسال ایونت به کامپوننت (طبق قرارداد جدید)
             card_view.handle_event(event)
 
-            # تست دمیج با اسپیس
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    razorfen_minion.take_damage(1)
+                    # UI فقط پکت استاندارد می‌سازد و شوت می‌کند
+                    packet = {
+                        "type": Events.CMD_DEBUG_DAMAGE,
+                        "source": "ui",
+                        "target": "razorfen_1",
+                        "payload": {"amount": 1}
+                    }
+                    event_bus.send_to_server(packet)
+                    print(f"[UI] Request Sent: {packet['type']}")
 
-        # ج) آپدیت منطق (Update)
+        # --- Logic Loop ---
+        # به جای تابع داخلی، متد انجین را صدا می‌زنیم
+        # Main دیگر نمی‌داند داخل انجین چه خبر است
+        event_bus.process_server_events(game_engine.process_event)
+
+        # --- Render Loop ---
         card_view.update(dt)
-
-        # د) رسم (Render)
         screen.fill(BG_COLOR)
-        card_view.render(screen) # استفاده از متد استاندارد render به جای draw
-
+        card_view.render(screen)
         pygame.display.flip()
 
     pygame.quit()
