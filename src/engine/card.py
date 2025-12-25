@@ -1,5 +1,7 @@
 class Card:
-    """کلاس والد برای تمام کارت‌ها"""
+    """
+    کلاس والد برای تمام کارت‌های بازی
+    """
     def __init__(self, name: str, image_path: str):
         self.name = name
         self.image_path = image_path
@@ -7,11 +9,19 @@ class Card:
     def get_info(self):
         return f"Card: {self.name}"
 
+
 class Minion(Card):
-    """کلاس فرزند برای مینیون‌ها با قابلیت مرگ و زندگی"""
-    def __init__(self, name: str, image_path: str, attack: int, health: int, tier: int, minion_type: str):
+    """
+    کلاس مینیون با قابلیت شناسایی (ID) و مدیریت وضعیت مرگ/زندگی
+    """
+    def __init__(self, id: str, name: str, image_path: str, attack: int, health: int, tier: int, minion_type: str):
+        # فراخوانی کلاس پدر
         super().__init__(name, image_path)
         
+        # شناسه منحصر به فرد برای سیستم ایونت
+        self.id = id           
+        
+        # ویژگی‌های گیم‌پلی
         self.attack = attack
         self.health = health
         self.max_health = health  
@@ -19,7 +29,7 @@ class Minion(Card):
         self.minion_type = minion_type 
         self.keywords = []  
         
-        # ✅ وضعیت حیاتی (State)
+        # وضعیت حیاتی (State Machine)
         self.is_alive = True 
 
     def take_damage(self, amount: int):
@@ -36,7 +46,7 @@ class Minion(Card):
         if self.health <= 0:
             self.health = 0          # جان منفی نداریم
             self.is_alive = False    # تغییر وضعیت به مرده
-            print(f"XX {self.name} has died! XX")
+            print(f"XX {self.name} (ID: {self.id}) has died! XX")
         else:
             print(f"-> {self.name} took {amount} damage! Health is now {self.health}.")
 
